@@ -70,19 +70,5 @@
     "prisma": "^6.11.1",
     "tailwindcss": "^3.4.17",
     "typescript": "^5"
-  },
-  "pnpm": {
-    "overrides": {
-      "@prisma/client": "6.11.1"
-    },
-    "peerDependencyRules": {
-      "allowedVersions": {
-        "typescript": "5"
-      }
-    },
-    "approvedPackages": {
-      "@prisma/client": "true",
-      "prisma": "true"
-    }
   }
 }
