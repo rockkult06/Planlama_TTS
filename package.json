@@ -3,10 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "next build",
+    "build": "prisma generate && next build",
     "dev": "next dev",
     "lint": "next lint",
-    "start": "next start"
+    "start": "next start",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
@@ -69,5 +70,19 @@
     "prisma": "^6.11.1",
     "tailwindcss": "^3.4.17",
     "typescript": "^5"
+  },
+  "pnpm": {
+    "overrides": {
+      "@prisma/client": "6.11.1"
+    },
+    "peerDependencyRules": {
+      "allowedVersions": {
+        "typescript": "5"
+      }
+    },
+    "approvedPackages": {
+      "@prisma/client": "true",
+      "prisma": "true"
+    }
   }
 }
