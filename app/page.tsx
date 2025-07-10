@@ -53,7 +53,7 @@ export default function TalepTakipSistemi() {
     <div className="container mx-auto p-4 max-w-7xl">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-center mb-2">Talep Takip Sistemi</h1>
-        <p className="text-muted-foreground text-center">Talep girişi, takibi ve yönetimi için kapsamlı sistem</p>
+        <p className="text-muted-foreground text-center">Ulaşım Planlama Dairesi Başkanlığı</p>
       </div>
 
       <Tabs defaultValue="form" className="w-full">
