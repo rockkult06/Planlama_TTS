@@ -9,10 +9,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { RefreshCcw } from "lucide-react"
+import { RefreshCcw, Download, Upload } from "lucide-react"
 import type { Talep } from "@/types/talep"
 import { format, parseISO } from "date-fns"
 import { tr } from "date-fns/locale"
+import * as XLSX from "xlsx"
 
 type SortField = keyof Talep
 type SortDirection = "asc" | "desc"
@@ -61,6 +62,77 @@ export default function TalepTable() {
       setSortField(field)
       setSortDirection("asc")
     }
+  }
+
+  const handleExcelExport = () => {
+    const exportData = filteredAndSortedTalepler.map((talep) => ({
+      "ID": talep.id,
+      "Talep Eden": talep.talepEden,
+      "Birim": talep.birim,
+      "Konu": talep.konu,
+      "Açıklama": talep.aciklama,
+      "Öncelik": talep.oncelik,
+      "Durum": talep.durum,
+      "Oluşturulma Tarihi": format(new Date(talep.createdAt), "dd/MM/yyyy HH:mm", { locale: tr }),
+      "Güncelleme Tarihi": format(new Date(talep.updatedAt), "dd/MM/yyyy HH:mm", { locale: tr }),
+    }))
+
+    const ws = XLSX.utils.json_to_sheet(exportData)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, "Talepler")
+    XLSX.writeFile(wb, `talepler_${new Date().toISOString().split("T")[0]}.xlsx`)
+  }
+
+  const handleExcelImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = async (e) => {
+      try {
+        const data = new Uint8Array(e.target?.result as ArrayBuffer)
+        const workbook = XLSX.read(data, { type: "array" })
+        const worksheet = workbook.Sheets[workbook.SheetNames[0]]
+        const jsonData = XLSX.utils.sheet_to_json(worksheet)
+
+        // Excel'den gelen verileri API'ye gönder
+        for (const row of jsonData) {
+          const rowData = row as any
+          const talepData = {
+            talepEden: rowData["Talep Eden"] || "",
+            birim: rowData["Birim"] || "",
+            konu: rowData["Konu"] || "",
+            aciklama: rowData["Açıklama"] || "",
+            oncelik: rowData["Öncelik"] || "Normal",
+          }
+
+          // API'ye POST isteği gönder
+          const response = await fetch('/api/talep', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(talepData),
+          })
+
+          if (!response.ok) {
+            console.error('Talep kaydedilemedi:', talepData)
+          }
+        }
+
+        // Talepleri yeniden yükle
+        await fetchTalepler()
+        
+        // Input'u temizle
+        event.target.value = ""
+        
+        alert("Excel dosyası başarıyla yüklendi!")
+      } catch (error) {
+        console.error('Excel import hatası:', error)
+        alert("Excel dosyası okunurken hata oluştu. Lütfen dosya formatını kontrol edin.")
+      }
+    }
+    reader.readAsArrayBuffer(file)
   }
 
   const filteredAndSortedTalepler = talepler
@@ -112,6 +184,36 @@ export default function TalepTable() {
           {error}
         </div>
       )}
+
+      {/* Excel İşlemleri */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Excel İşlemleri</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Button onClick={handleExcelExport} className="flex items-center gap-2">
+              <Download className="w-4 h-4" />
+              Excel'e Aktar
+            </Button>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="excel-import" className="cursor-pointer">
+                <Button className="flex items-center gap-2">
+                  <Upload className="w-4 h-4" />
+                  Excel'den Yükle
+                </Button>
+              </Label>
+              <Input
+                id="excel-import"
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={handleExcelImport}
+                className="hidden"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Yenile ve Filtreler */}
       <Card>
