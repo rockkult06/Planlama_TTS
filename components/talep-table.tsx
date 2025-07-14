@@ -11,15 +11,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { RefreshCcw, Upload, Download } from "lucide-react"
 import type { Talep } from "@/types/talep"
-import { format, parseISO } from "date-fns"
+import { format } from "date-fns"
 import { tr } from "date-fns/locale"
 import * as XLSX from "xlsx"
-import { toast } from "@/components/ui/use-toast"
+import { useToast } from "@/components/ui/use-toast"
 
 type SortField = keyof Talep
 type SortDirection = "asc" | "desc"
 
 export default function TalepTable() {
+  const { toast } = useToast()
   const [talepler, setTalepler] = useState<Talep[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
