@@ -9,11 +9,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { RefreshCcw, Download, Upload } from "lucide-react"
+import { RefreshCcw, Upload, Download } from "lucide-react"
 import type { Talep } from "@/types/talep"
 import { format, parseISO } from "date-fns"
 import { tr } from "date-fns/locale"
 import * as XLSX from "xlsx"
+import { toast } from "@/components/ui/use-toast"
 
 type SortField = keyof Talep
 type SortDirection = "asc" | "desc"
@@ -22,6 +23,7 @@ export default function TalepTable() {
   const [talepler, setTalepler] = useState<Talep[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [importing, setImporting] = useState(false)
   const [sortField, setSortField] = useState<SortField>("createdAt")
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc")
   const [filters, setFilters] = useState({
@@ -62,6 +64,103 @@ export default function TalepTable() {
       setSortField(field)
       setSortDirection("asc")
     }
+  }
+
+  const handleExcelImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setImporting(true)
+    
+    try {
+      const reader = new FileReader()
+      reader.onload = async (e) => {
+        try {
+          const data = new Uint8Array(e.target?.result as ArrayBuffer)
+          const workbook = XLSX.read(data, { type: "array" })
+          const worksheet = workbook.Sheets[workbook.SheetNames[0]]
+          const jsonData = XLSX.utils.sheet_to_json(worksheet)
+
+          // Excel verilerini API'ye gönder
+          const importPromises = jsonData.map(async (row: any) => {
+            const talepData = {
+              talepEden: row["Talep Eden"] || row["Talep Sahibi"] || "",
+              birim: row["Birim"] || row["Talep Sahibi Açıklaması"] || "Diğer",
+              konu: row["Konu"] || row["Talep Özeti"] || "",
+              aciklama: row["Açıklama"] || row["Yapılan İş"] || "",
+              oncelik: row["Öncelik"] || "Normal",
+              durum: row["Durum"] || "Bekliyor"
+            }
+
+            // Veritabanına kaydet
+            const response = await fetch('/api/talep', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(talepData),
+            })
+
+            if (!response.ok) {
+              throw new Error(`Talep kaydedilemedi: ${talepData.konu}`)
+            }
+
+            return response.json()
+          })
+
+          await Promise.all(importPromises)
+          
+          // Talepleri yeniden yükle
+          await fetchTalepler()
+          
+          toast({
+            title: "Başarılı",
+            description: `${jsonData.length} talep başarıyla içe aktarıldı.`,
+          })
+          
+        } catch (error) {
+          console.error('Excel import hatası:', error)
+          toast({
+            title: "Hata",
+            description: "Excel dosyası işlenirken bir hata oluştu.",
+            variant: "destructive"
+          })
+        } finally {
+          setImporting(false)
+        }
+      }
+      reader.readAsArrayBuffer(file)
+    } catch (error) {
+      console.error('Dosya okuma hatası:', error)
+      toast({
+        title: "Hata",
+        description: "Dosya okunamadı.",
+        variant: "destructive"
+      })
+      setImporting(false)
+    }
+    
+    // Input'u temizle
+    event.target.value = ""
+  }
+
+  const handleExcelExport = () => {
+    const exportData = filteredAndSortedTalepler.map((talep) => ({
+      "ID": talep.id,
+      "Talep Eden": talep.talepEden,
+      "Birim": talep.birim,
+      "Konu": talep.konu,
+      "Açıklama": talep.aciklama,
+      "Öncelik": talep.oncelik,
+      "Durum": talep.durum,
+      "Oluşturulma Tarihi": format(new Date(talep.createdAt), "dd/MM/yyyy HH:mm", { locale: tr }),
+      "Güncelleme Tarihi": format(new Date(talep.updatedAt), "dd/MM/yyyy HH:mm", { locale: tr })
+    }))
+
+    const ws = XLSX.utils.json_to_sheet(exportData)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, "Talepler")
+    XLSX.writeFile(wb, `talepler_${new Date().toISOString().split("T")[0]}.xlsx`)
   }
 
   const filteredAndSortedTalepler = talepler
@@ -106,59 +205,6 @@ export default function TalepTable() {
   const uniqueBirimler = [...new Set(talepler.map(t => t.birim))]
   const uniqueDurumlar = [...new Set(talepler.map(t => t.durum))]
 
-  const handleExcelExport = () => {
-    const exportData = filteredAndSortedTalepler.map((talep) => ({
-      "ID": talep.id,
-      "Talep Eden": talep.talepEden,
-      "Birim": talep.birim,
-      "İşletici": talep.isletici,
-      "Konu": talep.konu,
-      "Açıklama": talep.aciklama,
-      "Öncelik": talep.oncelik,
-      "Durum": talep.durum,
-      "Oluşturulma Tarihi": format(new Date(talep.createdAt), "dd/MM/yyyy HH:mm", { locale: tr }),
-      "Güncelleme Tarihi": format(new Date(talep.updatedAt), "dd/MM/yyyy HH:mm", { locale: tr })
-    }))
-
-    const ws = XLSX.utils.json_to_sheet(exportData)
-    const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, "Talepler")
-    XLSX.writeFile(wb, `talepler_${new Date().toISOString().split("T")[0]}.xlsx`)
-  }
-
-  const handleExcelImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) return
-
-    const formData = new FormData()
-    formData.append('file', file)
-
-    try {
-      const response = await fetch('/api/talep/import', {
-        method: 'POST',
-        body: formData,
-      })
-
-      if (!response.ok) {
-        throw new Error('Import işlemi başarısız')
-      }
-
-      const result = await response.json()
-      
-      // Talepleri yenile
-      fetchTalepler()
-      
-      // Başarı mesajı göster
-      alert(`${result.importedCount} talep başarıyla import edildi. ${result.errorCount} talep import edilemedi.`)
-      
-    } catch (error) {
-      console.error('Import hatası:', error)
-      alert('Excel dosyası import edilirken bir hata oluştu.')
-    }
-
-    event.target.value = "" // Input'u temizle
-  }
-
   return (
     <div className="space-y-6">
       {error && (
@@ -180,9 +226,9 @@ export default function TalepTable() {
             </Button>
             <div className="flex items-center gap-2">
               <Label htmlFor="excel-import" className="cursor-pointer">
-                <Button className="flex items-center gap-2">
+                <Button className="flex items-center gap-2" disabled={importing}>
                   <Upload className="w-4 h-4" />
-                  Excel'den Yükle
+                  {importing ? "İçe Aktarılıyor..." : "Excel'den Yükle"}
                 </Button>
               </Label>
               <Input
@@ -191,6 +237,7 @@ export default function TalepTable() {
                 accept=".xlsx,.xls"
                 onChange={handleExcelImport}
                 className="hidden"
+                disabled={importing}
               />
             </div>
           </div>
@@ -290,7 +337,6 @@ export default function TalepTable() {
                       Talep Eden {sortField === "talepEden" && (sortDirection === "asc" ? "↑" : "↓")}
                     </TableHead>
                     <TableHead>Birim</TableHead>
-                    <TableHead>İşletici</TableHead>
                     <TableHead 
                       className="cursor-pointer"
                       onClick={() => handleSort("konu")}
@@ -313,7 +359,6 @@ export default function TalepTable() {
                       <TableCell className="font-medium">{talep.id}</TableCell>
                       <TableCell>{talep.talepEden}</TableCell>
                       <TableCell>{talep.birim}</TableCell>
-                      <TableCell>{talep.isletici}</TableCell>
                       <TableCell className="max-w-[300px] truncate">{talep.konu}</TableCell>
                       <TableCell>{talep.oncelik}</TableCell>
                       <TableCell>

@@ -5,9 +5,9 @@ import { prisma } from '@/lib/prisma';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { talepEden, birim, isletici, konu, aciklama, oncelik } = body;
+    const { talepEden, birim, konu, aciklama, oncelik } = body;
     
-    if (!talepEden || !birim || !isletici || !konu || !aciklama || !oncelik) {
+    if (!talepEden || !birim || !konu || !aciklama || !oncelik) {
       return NextResponse.json(
         { error: 'Tüm alanlar zorunludur' },
         { status: 400 }
@@ -18,7 +18,6 @@ export async function POST(req: NextRequest) {
       data: {
         talepEden,
         birim,
-        isletici,
         konu,
         aciklama,
         oncelik,
