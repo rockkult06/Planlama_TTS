@@ -1,6 +1,10 @@
 {
-  "buildCommand": "npm run build",
+  "buildCommand": "npx prisma generate && next build",
   "installCommand": "npm install",
   "framework": "nextjs",
-  "outputDirectory": ".next"
+  "outputDirectory": ".next",
+  "env": {
+    "SKIP_ENV_VALIDATION": "true",
+    "NODE_ENV": "production"
+  }
 } 
