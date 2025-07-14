@@ -30,6 +30,7 @@ export async function POST(req: NextRequest) {
         const talepData = {
           talepEden: rowData['Talep Eden'] || rowData['Talep Sahibi'] || '',
           birim: rowData['Birim'] || rowData['Talep Sahibi Açıklaması'] || 'Diğer',
+          isletici: rowData['İşletici'] || rowData['İşletici'] || 'Eshot',
           konu: rowData['Konu'] || rowData['Talep Özeti'] || '',
           aciklama: rowData['Açıklama'] || rowData['Yapılan İş'] || '',
           oncelik: rowData['Öncelik'] || 'Normal',

@@ -11,6 +11,7 @@ model Talep {
   id          Int      @id @default(autoincrement())
   talepEden   String
   birim       String
+  isletici    String
   konu        String
   aciklama    String
   oncelik     String

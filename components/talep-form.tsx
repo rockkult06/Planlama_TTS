@@ -25,12 +25,18 @@ const birimler = [
   "Diğer"
 ];
 
+const isleticiler = [
+  "Eshot",
+  "İztaşıt"
+];
+
 export default function TalepForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [formData, setFormData] = useState({
     talepEden: "",
     birim: "",
+    isletici: "",
     konu: "",
     aciklama: "",
     oncelik: "",
@@ -39,7 +45,7 @@ export default function TalepForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.talepEden || !formData.birim || !formData.konu || !formData.aciklama || !formData.oncelik) {
+    if (!formData.talepEden || !formData.birim || !formData.isletici || !formData.konu || !formData.aciklama || !formData.oncelik) {
       toast({
         title: "Hata",
         description: "Lütfen tüm zorunlu alanları doldurun.",
@@ -67,6 +73,7 @@ export default function TalepForm() {
       setFormData({
         talepEden: "",
         birim: "",
+        isletici: "",
         konu: "",
         aciklama: "",
         oncelik: "",
@@ -118,6 +125,23 @@ export default function TalepForm() {
               {birimler.map((birim) => (
                 <SelectItem key={birim} value={birim}>
                   {birim}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* İşletici */}
+        <div className="space-y-2">
+          <Label htmlFor="isletici">İşletici *</Label>
+          <Select value={formData.isletici} onValueChange={(value) => handleInputChange("isletici", value)}>
+            <SelectTrigger>
+              <SelectValue placeholder="İşletici seçin" />
+            </SelectTrigger>
+            <SelectContent>
+              {isleticiler.map((isletici) => (
+                <SelectItem key={isletici} value={isletici}>
+                  {isletici}
                 </SelectItem>
               ))}
             </SelectContent>

@@ -111,6 +111,7 @@ export default function TalepTable() {
       "ID": talep.id,
       "Talep Eden": talep.talepEden,
       "Birim": talep.birim,
+      "İşletici": talep.isletici,
       "Konu": talep.konu,
       "Açıklama": talep.aciklama,
       "Öncelik": talep.oncelik,
@@ -289,6 +290,7 @@ export default function TalepTable() {
                       Talep Eden {sortField === "talepEden" && (sortDirection === "asc" ? "↑" : "↓")}
                     </TableHead>
                     <TableHead>Birim</TableHead>
+                    <TableHead>İşletici</TableHead>
                     <TableHead 
                       className="cursor-pointer"
                       onClick={() => handleSort("konu")}
@@ -311,6 +313,7 @@ export default function TalepTable() {
                       <TableCell className="font-medium">{talep.id}</TableCell>
                       <TableCell>{talep.talepEden}</TableCell>
                       <TableCell>{talep.birim}</TableCell>
+                      <TableCell>{talep.isletici}</TableCell>
                       <TableCell className="max-w-[300px] truncate">{talep.konu}</TableCell>
                       <TableCell>{talep.oncelik}</TableCell>
                       <TableCell>
