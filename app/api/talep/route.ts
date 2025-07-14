@@ -7,7 +7,10 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { talepEden, birim, konu, aciklama, oncelik } = body;
     
+    console.log('POST request body:', body);
+    
     if (!talepEden || !birim || !konu || !aciklama || !oncelik) {
+      console.log('Missing required fields:', { talepEden, birim, konu, aciklama, oncelik });
       return NextResponse.json(
         { error: 'Tüm alanlar zorunludur' },
         { status: 400 }
@@ -25,11 +28,12 @@ export async function POST(req: NextRequest) {
       },
     });
     
+    console.log('Talep created:', talep);
     return NextResponse.json(talep, { status: 201 });
   } catch (error) {
     console.error('Talep oluşturma hatası:', error);
     return NextResponse.json(
-      { error: 'Talep oluşturulurken bir hata oluştu' },
+      { error: 'Talep oluşturulurken bir hata oluştu', details: error instanceof Error ? error.message : 'Bilinmeyen hata' },
       { status: 500 }
     );
   }
@@ -38,17 +42,20 @@ export async function POST(req: NextRequest) {
 // GET /api/talep - Tüm talepleri getir
 export async function GET() {
   try {
+    console.log('GET /api/talep called');
+    
     const talepler = await prisma.talep.findMany({
       orderBy: {
         createdAt: 'desc',
       },
     });
     
+    console.log('Talepler fetched:', talepler.length);
     return NextResponse.json(talepler);
   } catch (error) {
     console.error('Talepleri getirme hatası:', error);
     return NextResponse.json(
-      { error: 'Talepler getirilirken bir hata oluştu' },
+      { error: 'Talepler getirilirken bir hata oluştu', details: error instanceof Error ? error.message : 'Bilinmeyen hata' },
       { status: 500 }
     );
   }

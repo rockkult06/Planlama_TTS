@@ -26,8 +26,8 @@ export default function TalepTable() {
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc")
   const [filters, setFilters] = useState({
     talepEden: "",
-    birim: "",
-    durum: "",
+    birim: "all",
+    durum: "all",
     search: "",
   })
 
@@ -139,8 +139,8 @@ export default function TalepTable() {
     .filter((talep) => {
       return (
         (!filters.talepEden || talep.talepEden.toLowerCase().includes(filters.talepEden.toLowerCase())) &&
-        (!filters.birim || talep.birim === filters.birim) &&
-        (!filters.durum || talep.durum === filters.durum) &&
+        (filters.birim === "all" || !filters.birim || talep.birim === filters.birim) &&
+        (filters.durum === "all" || !filters.durum || talep.durum === filters.durum) &&
         (!filters.search ||
           talep.konu.toLowerCase().includes(filters.search.toLowerCase()) ||
           talep.aciklama.toLowerCase().includes(filters.search.toLowerCase()))
@@ -252,7 +252,7 @@ export default function TalepTable() {
                   <SelectValue placeholder="Tümü" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Tümü</SelectItem>
+                  <SelectItem value="all">Tümü</SelectItem>
                   {uniqueBirimler.map((birim) => (
                     <SelectItem key={birim} value={birim}>
                       {birim}
@@ -271,7 +271,7 @@ export default function TalepTable() {
                   <SelectValue placeholder="Tümü" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Tümü</SelectItem>
+                  <SelectItem value="all">Tümü</SelectItem>
                   {uniqueDurumlar.map((durum) => (
                     <SelectItem key={durum} value={durum}>
                       {durum}
